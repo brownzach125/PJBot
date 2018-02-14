@@ -1,0 +1,22 @@
+{
+    "name": "ZachBot",
+    "portrait": "https://sscaitournament.com/images/portraits/p6.gif",
+    "race": "Protoss",
+    "wins": "0",
+    "losses": "0",
+    "draws": "0",
+    "score": 4092,
+    "avgScore": 1.43,
+    "winRate": 0,
+    "achievements": [],
+    "achievementsNum": 0,
+    "division": "Mixed",
+    "status": "Disabled",
+    "description": "",
+    "update": "2017-12-16 23:52:15",
+    "botBinary": "",
+    "bwapiDLL": "",
+    "botType": "JYTHON",
+    "botProfileURL": ""
+}
+
