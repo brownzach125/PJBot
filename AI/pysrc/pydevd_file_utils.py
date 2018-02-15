@@ -91,6 +91,10 @@ PATHS_FROM_ECLIPSE_TO_PYTHON = [
  (
  r'/home/solevi/.scbw/bots/zach_bot/AI',
  r'Z:\app\bots\zach_bot\AI'
+ ),
+ (
+ r'/home/solevi/jython2.7.0/Lib',
+ r'Z:\app\sc\bwapi-data\AI\zach_bot.jython\Lib'
  )
 ]
 
