@@ -4,6 +4,33 @@ from bwta import BWTA
 from expert import ResourceCollectorExpert, UnitExpert
 from blackboard_constants import LISTENER
 
+class Wrapper:
+    """
+    This class allows you to wrap a preconstructed object transparently
+    self.__dict___ holds wrapper attributes, self.base holds the
+    wrapped object attributes.
+    """
+    def __init__(self, base):
+        self.__dict__['base'] = base
+        
+    def __getattr__(self, name):
+        if self.__dict__[name]:
+            return self.__dict__[name]
+        return getattr(self.base, name)
+    
+    def __setattr__(self, name, value):
+        if name in self.__dict__:
+            self.__dict__[name] = value
+        elif hasattr(self.base, name):
+            setattr(self.base, name, value)
+        else:
+            self.__dict__[name] = value
+    
+    def __hasattr__(self, name):
+        if self.__dict__[name]:
+            return True
+        return hasattr(self.base, name)
+
 def overlay(game):
     locations = BWTA.getBaseLocations()
     for index, base_location in enumerate(locations):
