@@ -1,6 +1,7 @@
 from bwapi import UnitType
 from blackboard_constants import CLAIMED, FREE_UNITS, MINERAL_MINING_WORKERS, \
-                                 GAS_MINING_WORKERS, BWAPI_UNIT, LISTENER 
+                                 GAS_MINING_WORKERS, BWAPI_UNIT, LISTENER
+from wrapper import Wrapped
 
 
 class Expert(object):
@@ -15,35 +16,30 @@ class Expert(object):
     def onUnitDiscover(self, unit):
         pass
 
-# This expert's job is to be the on who iterates all units
-# I don't want every expert to have to iterate through every unit I'd prefer if they only need to look
-# at a few they care about
-class UnitExpert(Expert):        
+
+# All units should be touched by the UnitExpert first. They will get wrapped here
+class UnitExpert(Expert):
     def __init__(self, name, blackboard):
         super(UnitExpert, self).__init__(name, blackboard)
 
-    def onUnitDiscover(self, bwapi_unit):
-        print "We found a " + str(bwapi_unit.getType())
-        
-        unit = {
-            BWAPI_UNIT: bwapi_unit,
-            CLAIMED: False
-        }
+    def onUnitDiscover(self, unit):
+        unit = Wrapped(unit)
+        print "We found a " + str(unit.getType())
 
         if FREE_UNITS not in self.blackboard:
             self.blackboard[FREE_UNITS] = {}
         free_units = self.blackboard[FREE_UNITS]
 
-        type = bwapi_unit.getType()
+        type = unit.getType()
         
         if type not in free_units:
             free_units[type] = {}
        
-        side = bwapi_unit.getPlayer().getID()
+        side = unit.getPlayer().getID()
         if side not in free_units[type]:
             free_units[type][side] = {}
             
-        free_units[type][side][bwapi_unit.getID()] = unit
+        free_units[type][side][unit.getID()] = unit
         
 
 class ResourceCollectorExpert(Expert):
@@ -62,15 +58,15 @@ class ResourceCollectorExpert(Expert):
         new_workers = free_workers_dict.values()
         free_workers_dict.clear()
         
-        for worker in new_workers:
-            worker[CLAIMED] = True
-            bwapi_unit = worker[BWAPI_UNIT]
-            self.blackboard[MINERAL_MINING_WORKERS][bwapi_unit.getID()] = worker
+        for unit in new_workers:
+            unit.claimed = True
+            unit.owner = self
+            self.blackboard[MINERAL_MINING_WORKERS][unit.getID()] = unit
             
             closestMineral = filter(lambda x: x.getType().isMineralField(), game.neutral().getUnits())
-            closestMineral = min(closestMineral, key=lambda x: bwapi_unit.getDistance(x))
+            closestMineral = min(closestMineral, key=lambda x: unit.getDistance(x))
             if closestMineral:
-                bwapi_unit.gather(closestMineral, False)  
+                unit.gather(closestMineral, False)
                 
             
             
