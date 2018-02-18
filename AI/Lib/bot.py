@@ -56,6 +56,7 @@ class Bot(DefaultBWListener):
             bb = BlackBoard()
             bb.player = self.player
             bb.game = self.game
+            self.game.enableFlag(1)
 
             print "Analyzing map..."
             BWTA.readMap()
@@ -81,8 +82,13 @@ class Bot(DefaultBWListener):
         
         
     def onSendText(self, text):
+        try:
+            bb = BlackBoard()
+            print(eval(text))
+        except Exception as e:
+            print e
         print text
-        
+
     def onReceiveText(self, player, text):
         print text
 
