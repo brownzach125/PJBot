@@ -1,13 +1,11 @@
 from bwapi import UnitType
-from blackboard_constants import CLAIMED, FREE_UNITS, MINERAL_MINING_WORKERS, \
-                                 GAS_MINING_WORKERS, BWAPI_UNIT, LISTENER
 from wrapper import Wrapped
+from blackboard import BlackBoard
 
 
 class Expert(object):
-    def __init__(self, name, blackboard):
+    def __init__(self, name):
         self.name = name
-        self.blackboard = blackboard
 
     def onFrame(self):
         pass
@@ -19,16 +17,15 @@ class Expert(object):
 
 # All units should be touched by the UnitExpert first. They will get wrapped here
 class UnitExpert(Expert):
-    def __init__(self, name, blackboard):
-        super(UnitExpert, self).__init__(name, blackboard)
+    def __init__(self, name):
+        super(UnitExpert, self).__init__(name)
 
     def onUnitDiscover(self, unit):
         unit = Wrapped(unit)
         print "We found a " + str(unit.getType())
 
-        if FREE_UNITS not in self.blackboard:
-            self.blackboard[FREE_UNITS] = {}
-        free_units = self.blackboard[FREE_UNITS]
+        bb = BlackBoard()
+        free_units = bb.free_units
 
         type = unit.getType()
         
@@ -43,25 +40,23 @@ class UnitExpert(Expert):
         
 
 class ResourceCollectorExpert(Expert):
-    def __init__(self, name, blackboard):
-        super(ResourceCollectorExpert, self).__init__(name, blackboard)
-        
-        self.blackboard[MINERAL_MINING_WORKERS] = {}
-        self.blackboard[GAS_MINING_WORKERS] = {}
+    def __init__(self, name):
+        super(ResourceCollectorExpert, self).__init__(name)
         
     def onFrame(self):
-        player = self.blackboard[LISTENER].player
-        game = self.blackboard[LISTENER].game
+        bb = BlackBoard()
+        player = bb.player
+        game = bb.game
         
         # nit: I should check for every kind of worker on my side, but lol
-        free_workers_dict = self.blackboard[FREE_UNITS][UnitType.Zerg_Drone][player.getID()]
+        free_workers_dict = bb.free_units[UnitType.Zerg_Drone][player.getID()]
         new_workers = free_workers_dict.values()
         free_workers_dict.clear()
         
         for unit in new_workers:
             unit.claimed = True
             unit.owner = self
-            self.blackboard[MINERAL_MINING_WORKERS][unit.getID()] = unit
+            bb.mineral_workers[unit.getID()] = unit
             
             closestMineral = filter(lambda x: x.getType().isMineralField(), game.neutral().getUnits())
             closestMineral = min(closestMineral, key=lambda x: unit.getDistance(x))

@@ -2,7 +2,7 @@ import traceback
 from bwapi import Color, DefaultBWListener, Mirror
 from bwta import BWTA
 from expert import ResourceCollectorExpert, UnitExpert
-from blackboard_constants import LISTENER
+from blackboard import BlackBoard
 
 
 def overlay(game):
@@ -16,20 +16,19 @@ def overlay(game):
             game.drawLineMap(point_a.getX(), point_a.getY(), point_b.getX(), point_b.getY(), Color.Yellow)
             game.drawLineScreen(point_a.getX(), point_a.getY(), point_b.getX(), point_b.getY(), Color.Yellow)
 
+
 class Bot(DefaultBWListener):
     def __init__(self):
         self.mirror = Mirror()
         self.game = None
         self.player = None
         self.experts = []
-        self.blackboard = {
-            LISTENER: self
-        }
+        bb = BlackBoard()
 
     def run(self):
         self.mirror.getModule().setEventListener(self)
         self.mirror.startGame()
-        
+
     def onEnd(self, isWinner):
         pass
     
@@ -54,14 +53,17 @@ class Bot(DefaultBWListener):
         try:
             self.game = self.mirror.getGame()
             self.player = self.game.self()
-        
+            bb = BlackBoard()
+            bb.player = self.player
+            bb.game = self.game
+
             print "Analyzing map..."
             BWTA.readMap()
             BWTA.analyze()
             print "Map data ready"
 
-            self.experts.append(UnitExpert("Unit Expert", self.blackboard))
-            self.experts.append(ResourceCollectorExpert("Resource Collector", self.blackboard))
+            self.experts.append(UnitExpert("Unit Expert"))
+            self.experts.append(ResourceCollectorExpert("Resource Collector"))
 
         except Exception as e:
             print e
