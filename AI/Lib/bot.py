@@ -31,8 +31,8 @@ class Bot(DefaultBWListener):
     def call_experts(self, func_name, *args, **kwargs):
         try:
             for expert in self.experts:
-                func = getattr(expert, func_name)
-                if func:
+                if hasattr(expert, func_name):
+                    func = getattr(expert, func_name)
                     func(*args, **kwargs)
         except Exception as e:
             print e
@@ -40,18 +40,36 @@ class Bot(DefaultBWListener):
 
     def onEnd(self, isWinner):
         pass
-    
+
     def onNukeDetect(self, target):
-        pass
-    
-    def onUnitCreate(self, unit):
         pass
 
     def onUnitDiscover(self, unit):
         self.call_experts('onUnitDiscover', unit)
 
+    def onUnitEvade(self, unit):
+        self.call_experts('onUnitEvade', unit)
+
+    def onUnitShow(self, unit):
+        self.call_experts('onUnitShow', unit)
+
+    def onUnitHide(self, unit):
+        self.call_experts('onUnitHide', unit)
+
+    def onUnitCreate(self, unit):
+        self.call_experts('onUnitCreate', unit)
+
+    def onUnitDestroy(self, unit):
+        self.call_experts('onUnitDestroy', unit)
+
     def onUnitMorph(self, unit):
         self.call_experts('onUnitMorph', unit)
+
+    def onUnitRenegade(self, unit):
+        self.call_experts('onUnitRenegade', unit)
+
+    def onUnitComplete(self, unit):
+        self.call_experts('onUnitComplete', unit)
 
     def onFrame(self):
         self.call_experts('onFrame')
@@ -62,10 +80,11 @@ class Bot(DefaultBWListener):
         try:
             self.game = self.mirror.getGame()
             self.player = self.game.self()
+            self.game.enableFlag(1)
+            self.game.setLocalSpeed(42)
             bb = BlackBoard()
             bb.player = self.player
             bb.game = self.game
-            self.game.enableFlag(1)
 
             print "Analyzing map..."
             BWTA.readMap()
