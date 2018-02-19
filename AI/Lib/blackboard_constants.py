@@ -1,6 +1,0 @@
-CLAIMED = 'claimed'
-FREE_UNITS = 'free_units'
-MINERAL_MINING_WORKERS = 'mineral_mining_workers'
-GAS_MINING_WORKERS = 'gas_mining_workers'
-BWAPI_UNIT = 'bwapi_unit'
-LISTENER = 'listener'

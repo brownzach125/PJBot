@@ -1,8 +1,8 @@
 import traceback
 from bwapi import Color, DefaultBWListener, Mirror
 from bwta import BWTA
-from expert import ResourceCollectorExpert, UnitExpert
-from blackboard import BlackBoard
+from AI.Lib.experts import ResourceCollectorExpert, UnitExpert, BuilderExpert
+from AI.Lib.blackboard import BlackBoard
 
 
 def overlay(game):
@@ -23,11 +23,20 @@ class Bot(DefaultBWListener):
         self.game = None
         self.player = None
         self.experts = []
-        bb = BlackBoard()
 
     def run(self):
         self.mirror.getModule().setEventListener(self)
         self.mirror.startGame()
+
+    def call_experts(self, func_name, *args, **kwargs):
+        try:
+            for expert in self.experts:
+                func = getattr(expert, func_name)
+                if func:
+                    func(*args, **kwargs)
+        except Exception as e:
+            print e
+            traceback.print_exc()
 
     def onEnd(self, isWinner):
         pass
@@ -37,16 +46,16 @@ class Bot(DefaultBWListener):
     
     def onUnitCreate(self, unit):
         pass
-        #print "New Unit Discovered"
-    
+
     def onUnitDiscover(self, unit):
-        try:
-            for expert in self.experts:
-                expert.onUnitDiscover(unit)
-        except Exception as e:
-            print e
-            traceback.print_exc()
-        
+        self.call_experts('onUnitDiscover', unit)
+
+    def onUnitMorph(self, unit):
+        self.call_experts('onUnitMorph', unit)
+
+    def onFrame(self):
+        self.call_experts('onFrame')
+
     def onStart(self):
         # Due to a nastyness with pydevd finding the location of atexit and threading
         # I put things in try catches so I'll see them happen instead of the bot silently dying
@@ -64,22 +73,12 @@ class Bot(DefaultBWListener):
             print "Map data ready"
 
             self.experts.append(UnitExpert("Unit Expert"))
-            self.experts.append(ResourceCollectorExpert("Resource Collector"))
+            self.experts.append(ResourceCollectorExpert("Resource Collector Expert"))
+            self.experts.append(BuilderExpert("Build Expert"))
 
         except Exception as e:
             print e
             traceback.print_exc()
-        
-    def onFrame(self):
-        try:
-            overlay(self.game)
-            for expert in self.experts:
-                expert.onFrame()
-        except Exception as e:
-            print e
-            traceback.print_exc()
-            
-        
         
     def onSendText(self, text):
         try:
