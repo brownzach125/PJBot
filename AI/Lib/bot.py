@@ -1,7 +1,7 @@
 import traceback
 from bwapi import Color, DefaultBWListener, Mirror
 from bwta import BWTA
-from AI.Lib.experts import ResourceCollectorExpert, UnitExpert, BuilderExpert
+from AI.Lib.experts import ResourceCollectorExpert, UnitExpert, BuilderExpert, SchedulerExpert
 from AI.Lib.blackboard import BlackBoard
 
 
@@ -85,6 +85,7 @@ class Bot(DefaultBWListener):
             bb = BlackBoard()
             bb.player = self.player
             bb.game = self.game
+            bb.BWTA = BWTA
 
             print "Analyzing map..."
             BWTA.readMap()
@@ -93,6 +94,7 @@ class Bot(DefaultBWListener):
 
             self.experts.append(UnitExpert("Unit Expert"))
             self.experts.append(ResourceCollectorExpert("Resource Collector Expert"))
+            self.experts.append(SchedulerExpert("Scheduler Expert"))
             self.experts.append(BuilderExpert("Build Expert"))
 
         except Exception as e:
