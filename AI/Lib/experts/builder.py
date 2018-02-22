@@ -1,18 +1,17 @@
-from bwapi import UnitType
+from bwapi import UnitType, TilePosition
+import math
 
-from AI.Lib.experts.expert import Expert
 from pubsub import pub
+import logging
+from AI.Lib import event_constants
 from AI.Lib.subscribe import every
 from AI.Lib.blackboard import BlackBoard
 
-@every('onStart')
-def start():
-    print 'start here?'
 
-@every('onStart')
+@every(event_constants.onStart)
 def construct():
-    print 'construct builder'
     BlackBoard().builder_expert = BuilderExpert('Builder Expert')
+
 
 class BuildJob(object):
     def __init__(self, worker, unit_type, position):
@@ -21,32 +20,56 @@ class BuildJob(object):
         self.position = position
 
 
-class BuilderExpert(Expert):
+class BuilderExpert:
     def __init__(self, name):
-        super(BuilderExpert, self).__init__(name)
-        self.unit_trackers.append(self.bb.drones_on_way_to_build)
-        self.bb.extractor_morphed_callback = self.extractor_morphed
-        pub.subscribe(self.onFrame, 'onFrame')
+        self.bb = BlackBoard()
+        self.name = name
 
-    def job_done(self, building):
+        pub.subscribe(self.on_frame, event_constants.onFrame)
+        pub.subscribe(self.unit_destroyed, event_constants.onUnitDestroy)
+        pub.subscribe(self.unit_morphed, event_constants.onUnitMorph)
+
+        self.workers_who_died_while_building_extractors = {}
+
+    def unit_destroyed(self, unit):
+        if unit.getID() not in self.bb.drones_on_way_to_build:
+            return
+        logging.debug("Unit destroyed while on way to build")
+
+        build_type = unit.build_job.unit_type
+
+        if build_type == UnitType.Zerg_Extractor:
+            # TODO this was expected
+            self.workers_who_died_while_building_extractors[unit.getID()] = unit
+        else:
+            # TODO this was not expected this is bad I should make the error message better and actaull do something
+            logging.error("Unit Destroyed while on way to create")
+
+    def unit_morphed(self, unit):
         bb = self.bb
-        job = building.build_job
+        if unit.getID() not in self.bb.drones_on_way_to_build and unit.getType() != UnitType.Zerg_Extractor:
+            return
+
+        builder = unit
+        if unit.getType() == UnitType.Zerg_Extractor:
+            builder = None
+            logging.debug("Extractor Morphed")
+            for worker in self.workers_who_died_while_building_extractors.values():
+                if worker.build_job.position == unit.getTilePosition():
+                    del self.workers_who_died_while_building_extractors[worker.getID()]
+                    builder = worker
+                    break
+            if not builder:
+                logging.error("An extractor morphed without us having known that a worker had died to build it")
+
+        job = builder.build_job
         bb.minerals_pending -= job.unit_type.mineralPrice()
         bb.gas_pending -= job.unit_type.gasPrice()
+
         # NOTE later I might choose to keep this unit
-        job.worker.abandon()
+        job.worker.clean_ownership()
         del bb.drones_on_way_to_build[job.worker.getID()]
-
-    def extractor_morphed(self, unit):
-        print "Extractor Morphed Callback"
-        bb = self.bb
-        position = unit.getTilePosition()
-        job = bb.jobs_to_build_extractors[bb.postion_to_key(position)]
-        del bb.jobs_to_build_extractors[bb.postion_to_key(position)]
-        self.job_done(job.worker)
-
-    def building_morphed(self, unit):
-        self.job_done(unit)
+        bb.add_unit_to_free(unit)
 
     # Assumes this job is valid
     def create_build_job(self, worker, unit_type, position):
@@ -56,17 +79,15 @@ class BuilderExpert(Expert):
 
         worker.build_job = BuildJob(worker, unit_type, position)
         self.bb.drones_on_way_to_build[worker.getID()] = worker
-        # NOTE I should add a destroy callback I should do that for all my experts
-        if unit_type == UnitType.Zerg_Extractor:
-            bb.jobs_to_build_extractors[bb.postion_to_key(position)] = worker.build_job
-        else:
-            worker.morph_callback = self.building_morphed
-
         worker.build(unit_type, position)
 
-
-    def onFrame(self):
+    def on_frame(self):
         bb = self.bb
+
+        if len(self.workers_who_died_while_building_extractors):
+            logging.error("This means he was killed in action!!!!! we need to do something about this")
+
+
         free_hatcheries = bb.get_friendly_x(UnitType.Zerg_Hatchery)
         new_hatcheries = free_hatcheries.values()
         free_hatcheries.clear()
@@ -86,40 +107,72 @@ class BuilderExpert(Expert):
         bb.waiting_on_gas = bb.gas_available < next_unit_type.gasPrice()
         bb.waiting_on_supply = bb.supply_available < next_unit_type.supplyRequired()
         bb.waiting_on_larva = not next_unit_type.isBuilding() and not larva
-        bb.waiting_on_worker = next_unit_type.isBuilding() and not bb.available_worker()
+        bb.waiting_on_builder = next_unit_type.isBuilding() and not bb.available_worker()
 
         if not bb.build_waiting_on_something:
             if not next_unit_type.isBuilding():
                 larva = larva[0]
                 larva.train(next_unit_type)
-            if next_unit_type == UnitType.Zerg_Extractor:
+                bb.build_schedule.pop(0)
+                return
 
+            worker = bb.grab_worker()
+            if not worker:
+                self.bb.waiting_on_builder = True
+                return
 
-                extractors = bb.get_neutral_x(UnitType.Resource_Vespene_Geyser).values()
-                extractors = filter(lambda x: x.exists(), extractors)
-                if not len(extractors):
-                    print "No available geyser"
-                    return
+            worker.owner = self
+            worker.claimed = True
 
-                hatchery = bb.hatcheries.itervalues().next()
-                if not hatchery:
-                    print "There is no hatchery what's even the point now?"
-                    return
+            build_near = worker.getTilePosition()
+            position = self.get_build_tile(worker, next_unit_type, build_near)
+            if not position:
+                logging.error("Unable to find a location to build")
+            self.create_build_job(worker, next_unit_type, position)
 
-               # TODO I should ask for the closest worker
-                worker = bb.grab_worker()
-                if not worker:
-                    self.bb.no_vespene_geyser_available = True
-                    return
-                worker.owner = self
-
-                extractor = min(extractors, key=lambda x: x.getDistance(hatchery.getPosition()))
-                bb.remove_unit_from_free(extractor)
-
-                position = extractor.getTilePosition()
-
-                self.create_build_job(worker, UnitType.Zerg_Extractor, position)
             bb.build_schedule.pop(0)
+
+    def get_build_tile(self, builder, building_type, start_tile, max_distance=40):
+        bb = self.bb
+        if building_type.isRefinery():
+            extractors = bb.get_neutral_x(UnitType.Resource_Vespene_Geyser).values()
+            extractors = filter(lambda x: x.exists(), extractors)
+            if not len(extractors):
+                logging.debug("There are no available extractors")
+                return None
+            # TODO I'm not a fan of this doing that here
+            bb.remove_unit_from_free(extractors[0])
+            return extractors[0].getTilePosition()
+
+        distance = 3
+        while distance <  max_distance:
+            for i in range(start_tile.getX() - distance, start_tile.getY() + distance):
+                for j in range (start_tile.getY() - distance, start_tile.getY() + distance):
+                    if bb.game.canBuildHere(TilePosition(i, j), building_type, builder.base, False):
+                        units_in_way = False
+                        for unit in bb.game.getAllUnits():
+                            if unit.getID() == builder.getID():
+                                continue
+                            if abs(unit.getTilePosition().getX()-i) < 4 and abs(unit.getTilePosition().getY() - j ) < 4:
+                                units_in_way = True
+                                break
+
+                        if building_type.requiresCreep():
+                            creep_missing = False
+                            for k in range(i, i + building_type.tileWidth() + 1):
+                                for I in range(j, j + building_type.tileHeight() + 1):
+                                    if not bb.game.hasCreep(k, I):
+                                        creep_missing = True
+                                        break
+
+                        if creep_missing:
+                            continue
+
+                        if not units_in_way:
+                            return TilePosition(i, j)
+
+            distance += 2
+
 
 
 

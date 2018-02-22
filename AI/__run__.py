@@ -8,6 +8,8 @@ import time
 #import pydevd
 #pydevd.settrace('172.17.0.1', stdoutToServer=True, stderrToServer=True, suspend=False)
 sys.path.append("C:/Users/solevi/PycharmProjects/PJBot/bwmirror_v2_5.jar")
+# site-packages folder
+sys.path.append("./Lib/site-packages")
 
 try:
     from Lib.bot import Bot

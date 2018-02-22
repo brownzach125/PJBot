@@ -62,7 +62,7 @@ class UnitWrapper(Wrapped):
         self.destroy_callback = None
         self.workers = []
 
-    def abandon(self):
+    def clean_ownership(self):
         self.complete_callback = None
         self.morph_callback = None
         self.destroy_callback = None

@@ -10,6 +10,7 @@ def construct():
     print 'construct resource collector'
     BlackBoard().res_collector = ResourceCollectorExpert('Resource Collector')
 
+
 class ResourceCollectorExpert(Expert):
     def __init__(self, name):
         super(ResourceCollectorExpert, self).__init__(name)
@@ -33,9 +34,13 @@ class ResourceCollectorExpert(Expert):
 
     def release_worker(self):
         bb = self.bb
+
+        if not len(bb.mineral_workers):
+            return None
+
         unit = bb.mineral_workers.itervalues().next()
         del bb.mineral_workers[unit.getID()]
-        unit.abandon()
+        unit.clean_ownership()
         return unit
 
     def claim_extractor(self, extractor):

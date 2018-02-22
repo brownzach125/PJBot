@@ -1,9 +1,16 @@
 import traceback
 from bwapi import Color, DefaultBWListener, Mirror
 from bwta import BWTA
+from AI.Lib.bwapi_wrapper import Game
 from AI.Lib.blackboard import BlackBoard
 from pubsub import pub
 import logging
+logging.basicConfig(
+    handlers=[
+        logging.StreamHandler()
+    ],
+    level=logging.DEBUG
+)
 import sys
 from functools import partial
 from subscribe import every
@@ -23,6 +30,7 @@ def logerrors(f):
 def frame():
     overlay(BlackBoard().game)
 
+
 def overlay(game):
     locations = BWTA.getBaseLocations()
     for base_location in locations:
@@ -40,6 +48,7 @@ class Bot(DefaultBWListener):
         self.game = None
         self.player = None
         self.experts = []
+        self.bb = BlackBoard()
 
     def run(self):
         self.mirror.getModule().setEventListener(self)
@@ -53,31 +62,31 @@ class Bot(DefaultBWListener):
         
     def _onUnitDiscover(self, unit):
         pub.sendMessage('preUnitDiscover', unit=unit)
-        pub.sendMessage('onUnitDiscover', unit=unit)
+        #pub.sendMessage('onUnitDiscover', unit=unit)
 
     def _onUnitEvade(self, unit):
         pub.sendMessage('preUnitEvade', unit=unit)
-        pub.sendMessage('onUnitEvade', unit=unit)
+        #pub.sendMessage('onUnitEvade', unit=unit)
 
     def _onUnitShow(self, unit):
         pub.sendMessage('preUnitShow', unit=unit)
-        pub.sendMessage('onUnitShow', unit=unit)
+        #pub.sendMessage('onUnitShow', unit=unit)
     
     def _onUnitHide(self, unit):
         pub.sendMessage('preUnitHide', unit=unit)
-        pub.sendMessage('onUnitHide', unit=unit)
+        #pub.sendMessage('onUnitHide', unit=unit)
 
     def _onUnitCreate(self, unit):
         pub.sendMessage('preUnitCreate', unit=unit)
-        pub.sendMessage('onUnitCreate', unit=unit)
+        #pub.sendMessage('onUnitCreate', unit=unit)
 
     def _onUnitDestroy(self, unit):
         pub.sendMessage('preUnitDestroy', unit=unit)
-        pub.sendMessage('onUnitDestroy', unit=unit)
+        #pub.sendMessage('onUnitDestroy', unit=unit)
 
     def _onUnitMorph(self, unit):
         pub.sendMessage('preUnitMorph', unit=unit)
-        pub.sendMessage('onUnitMorph', unit=unit)
+        #pub.sendMessage('onUnitMorph', unit=unit)
 
     def _onUnitRenegade(self, unit):
         pub.sendMessage('preUnitRenegade', unit=unit)
@@ -85,14 +94,14 @@ class Bot(DefaultBWListener):
 
     def _onUnitComplete(self, unit):
         pub.sendMessage('preUnitComplete', unit=unit)
-        pub.sendMessage('onUnitComplete', unit=unit)
+        #pub.sendMessage('onUnitComplete', unit=unit)
     
     def _onFrame(self):
         pub.sendMessage('onFrame')
     
     def _onStart(self):
         
-        self.game = self.mirror.getGame()
+        self.game = Game(self.mirror.getGame())
         self.player = self.game.self()
         self.game.enableFlag(1)
         self.game.setLocalSpeed(42)
@@ -109,6 +118,7 @@ class Bot(DefaultBWListener):
         pub.sendMessage('onStart')
         
     def _onSendText(self, text):
+        bb = self.bb
         print(eval(text))
         
     def _onReceiveText(self, player, text):

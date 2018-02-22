@@ -1,4 +1,4 @@
-from bwapi import UnitType
+from AI.Lib.bwapi_wrapper import UnitType
 
 from AI.Lib.blackboard import BlackBoard
 from expert import Expert
@@ -9,6 +9,7 @@ from AI.Lib.subscribe import every
 def construct():
     print 'construct scheduler'
     BlackBoard().scheduler = SchedulerExpert('Scheduler Expert')
+
 
 class SchedulerExpert(Expert):
     def __init__(self, name):
@@ -23,16 +24,23 @@ class SchedulerExpert(Expert):
             print "Schedule got to run"
 
             schedule = [
-                UnitType.Zerg_Extractor,
                 UnitType.Zerg_Drone,
+                UnitType.Zerg_Spawning_Pool,
                 UnitType.Zerg_Drone,
                 UnitType.Zerg_Drone,
                 UnitType.Zerg_Overlord,
                 UnitType.Zerg_Drone,
                 UnitType.Zerg_Drone,
                 UnitType.Zerg_Drone,
+                UnitType.Zerg_Drone,
+                UnitType.Zerg_Drone,
+                UnitType.Zerg_Drone,
+                UnitType.Zerg_Drone,
+                UnitType.Zerg_Drone,
                 UnitType.Zerg_Extractor,
-                UnitType.Zerg_Drone
+                UnitType.Zerg_Drone,
+                UnitType.Zerg_Drone,
+                UnitType.Zerg_Drone,
             ]
             bb.build_schedule = schedule
 

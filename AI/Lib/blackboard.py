@@ -52,8 +52,6 @@ class BlackBoard:
         return self.waiting_on_minerals or self.waiting_on_gas or\
                self.waiting_on_supply or self.waiting_on_larva or self.waiting_on_builder
     drones_on_way_to_build = {}
-    jobs_to_build_extractors = {}
-    extractor_morphed_callback = None
     minerals_pending = 0
     gas_pending = 0
 
