@@ -1,12 +1,12 @@
 import traceback
 from bwapi import Color, DefaultBWListener, Mirror
 from bwta import BWTA
-from AI.Lib.experts import ResourceCollectorExpert, UnitExpert, BuilderExpert, SchedulerExpert
 from AI.Lib.blackboard import BlackBoard
 from pubsub import pub
 import logging
 import sys
 from functools import partial
+from subscribe import every
 
 def logerrors(f):
     """ this function logs any exceptions that occur while f is being executed """
@@ -17,17 +17,15 @@ def logerrors(f):
         # that way, we don't include this function in the call stack
         ei = sys.exc_info()
         logging.error(''.join(traceback.format_exception(ei[0], ei[1], ei[2].tb_next)))
-    
 
+
+@every('onFrame')
 def frame():
-    bb = BlackBoard()
-    overlay(bb.game)
-pub.subscribe(frame, 'onFrame')
+    overlay(BlackBoard().game)
 
 def overlay(game):
     locations = BWTA.getBaseLocations()
-    for index, base_location in enumerate(locations):
-        n_points = len(locations)
+    for base_location in locations:
         points = base_location.getRegion().getPolygon().getPoints()
         for i in range(-1, len(points) - 1):
             point_a = points[i]
@@ -108,10 +106,6 @@ class Bot(DefaultBWListener):
         BWTA.analyze()
         print "Map data ready"
         
-        self.experts.append(UnitExpert("Unit Expert"))
-        self.experts.append(ResourceCollectorExpert("Resource Collector Expert"))
-        self.experts.append(SchedulerExpert("Scheduler Expert"))
-        self.experts.append(BuilderExpert("Build Expert"))
         pub.sendMessage('onStart')
         
     def _onSendText(self, text):

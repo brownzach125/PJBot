@@ -5,6 +5,12 @@ from AI.Lib.blackboard import BlackBoard
 from expert import Expert
 from AI.Lib.wrapper import UnitWrapper
 from pubsub import pub
+from AI.Lib.subscribe import every
+
+@every('onStart')
+def construct():
+    print 'construct unit tracker'
+    BlackBoard().unit_expert = UnitExpert('Unit Expert')
 
 # All units should be touched by the UnitExpert first. They will get wrapped here
 class UnitExpert(Expert):

@@ -2,6 +2,17 @@ from bwapi import UnitType
 
 from AI.Lib.experts.expert import Expert
 from pubsub import pub
+from AI.Lib.subscribe import every
+from AI.Lib.blackboard import BlackBoard
+
+@every('onStart')
+def start():
+    print 'start here?'
+
+@every('onStart')
+def construct():
+    print 'construct builder'
+    BlackBoard().builder_expert = BuilderExpert('Builder Expert')
 
 class BuildJob(object):
     def __init__(self, worker, unit_type, position):

@@ -2,6 +2,13 @@ from bwapi import UnitType
 
 from expert import Expert
 from pubsub import pub
+from AI.Lib.subscribe import every
+from AI.Lib.blackboard import BlackBoard
+
+@every('onStart')
+def construct():
+    print 'construct resource collector'
+    BlackBoard().res_collector = ResourceCollectorExpert('Resource Collector')
 
 class ResourceCollectorExpert(Expert):
     def __init__(self, name):
