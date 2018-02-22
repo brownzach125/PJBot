@@ -3,6 +3,12 @@ from bwapi import UnitType
 from AI.Lib.blackboard import BlackBoard
 from expert import Expert
 from pubsub import pub
+from AI.Lib.subscribe import every
+
+@every('onStart')
+def construct():
+    print 'construct scheduler'
+    BlackBoard().scheduler = SchedulerExpert('Scheduler Expert')
 
 class SchedulerExpert(Expert):
     def __init__(self, name):
