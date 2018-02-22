@@ -1,7 +1,7 @@
 from bwapi import UnitType
 
 from expert import Expert
-
+from pubsub import pub
 
 class ResourceCollectorExpert(Expert):
     def __init__(self, name):
@@ -13,6 +13,7 @@ class ResourceCollectorExpert(Expert):
         self.bb.return_worker = self.claim_worker
         self.bb.worker_available = self.worker_available
         self.bb.available_worker = self.worker_available
+        pub.subscribe(self.onFrame, 'onFrame')
 
     def mineral_worker_destroy_callback(self, unit):
         del self.bb.mineral_workers[unit.getID()]

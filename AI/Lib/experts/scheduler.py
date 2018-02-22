@@ -2,11 +2,12 @@ from bwapi import UnitType
 
 from AI.Lib.blackboard import BlackBoard
 from expert import Expert
-
+from pubsub import pub
 
 class SchedulerExpert(Expert):
     def __init__(self, name):
         super(SchedulerExpert, self).__init__(name)
+        pub.subscribe(self.onFrame, 'onFrame')
 
     def onFrame(self):
         bb = self.bb
