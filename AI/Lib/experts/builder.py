@@ -1,7 +1,7 @@
 from bwapi import UnitType
 
 from AI.Lib.experts.expert import Expert
-
+from pubsub import pub
 
 class BuildJob(object):
     def __init__(self, worker, unit_type, position):
@@ -14,8 +14,8 @@ class BuilderExpert(Expert):
     def __init__(self, name):
         super(BuilderExpert, self).__init__(name)
         self.unit_trackers.append(self.bb.drones_on_way_to_build)
-
         self.bb.extractor_morphed_callback = self.extractor_morphed
+        pub.subscribe(self.onFrame, 'onFrame')
 
     def job_done(self, building):
         bb = self.bb

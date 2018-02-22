@@ -4,13 +4,20 @@ from AI.Lib.blackboard import BlackBoard
 
 from expert import Expert
 from AI.Lib.wrapper import UnitWrapper
-
+from pubsub import pub
 
 # All units should be touched by the UnitExpert first. They will get wrapped here
 class UnitExpert(Expert):
     def __init__(self, name):
         super(UnitExpert, self).__init__(name)
-
+        pub.subscribe(self.onUnitCreate, 'preUnitCreate')
+        pub.subscribe(self.onUnitDiscover, 'preUnitDiscover')
+        pub.subscribe(self.onUnitMorph, 'preUnitMorph')
+        pub.subscribe(self.onUnitComplete, 'preUnitComplete')
+        pub.subscribe(self.onUnitEvade, 'preUnitEvade')
+        pub.subscribe(self.onUnitDestroy, 'preUnitDestroy')
+        
+        
     def find_or_wrap_unit(self, unit):
         bb = BlackBoard()
 
