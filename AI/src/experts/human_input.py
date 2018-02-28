@@ -33,7 +33,8 @@ def on_frame():
                 pub.sendMessage('mouse_up.' + str(mouse_button), position=position)
                 pub.sendMessage('mouse_click.' + str(mouse_button), position=position)
                 bb.mouse_up_location = position
-                logging.debug('mouse_click at ' + str(position))
+                logging.debug('mouse_click @ PIXEL ' + str(position) + " TILE [" + str(position.getX()/32) + ", " + str(position.getY()/32) + ']')
+
 
 
 

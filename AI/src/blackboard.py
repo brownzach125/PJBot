@@ -64,6 +64,11 @@ class BlackBoard:
     # Scheduler Expert
     build_schedule = []
 
+    # Map manager
+    next_expansion_location = None
+    claim_build_location = None
+    release_build_location = None
+
 
     # Utils
     def postion_to_key(self, position):

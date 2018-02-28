@@ -22,18 +22,16 @@ class SchedulerExpert(Expert):
 
         frame = bb.game.getFrameCount()
         if frame == 0:
-            print "Schedule got to run"
-
             schedule = [
-                UnitType.Zerg_Hatchery,
                 UnitType.Zerg_Drone,
-                UnitType.Zerg_Spawning_Pool,
+                UnitType.Zerg_Drone,
                 UnitType.Zerg_Drone,
                 UnitType.Zerg_Drone,
                 UnitType.Zerg_Overlord,
                 UnitType.Zerg_Drone,
                 UnitType.Zerg_Drone,
                 UnitType.Zerg_Drone,
+                UnitType.Zerg_Spawning_Pool,
                 UnitType.Zerg_Drone,
                 UnitType.Zerg_Drone,
                 UnitType.Zerg_Drone,
@@ -43,6 +41,8 @@ class SchedulerExpert(Expert):
                 UnitType.Zerg_Drone,
                 UnitType.Zerg_Drone,
                 UnitType.Zerg_Drone,
+                UnitType.Zerg_Hatchery,
+                UnitType.Zerg_Hatchery,
             ]
 
             bb.build_schedule = schedule

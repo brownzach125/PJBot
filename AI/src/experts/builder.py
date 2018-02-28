@@ -21,10 +21,75 @@ def build_on_click(position):
 
 
 class BuildJob(object):
-    def __init__(self, worker, unit_type, position):
+
+    def log(self, message):
+        full_message = "{0}@{1} {2}".format(self.worker.name, self.worker.getTilePosition(), message)
+        logging.debug(full_message)
+
+    def __init__(self, worker, unit_type, position, build_on_top_of_unit, builder_expert):
+        self.bb = BlackBoard()
         self.worker = worker
         self.unit_type = unit_type
         self.position = position
+        self.build_on_top_of_unit = build_on_top_of_unit
+        self.builder_expert = builder_expert
+
+        if self.build_on_top_of_unit:
+            morph_unit = self.build_on_top_of_unit
+        else:
+            morph_unit = worker
+        self.events = {
+            self.on_frame: event_constants.onFrame,
+            self.on_unit_destroy: event_constants.event_x_for_u(event_constants.onUnitDestroy, worker),
+            self.on_unit_morph: event_constants.event_x_for_u(event_constants.onUnitMorph, morph_unit)
+        }
+
+        for handler, event in self.events.iteritems():
+            pub.subscribe(handler, event)
+
+        self.reserve_funds()
+        bb.drones_on_way_to_build[worker.getID()] = worker
+
+        self.log("Going to build a {0} at {1}".format(unit_type, position))
+
+
+    def reserve_funds(self):
+        bb.minerals_pending += self.unit_type.mineralPrice()
+        bb.gas_pending += self.unit_type.gasPrice()
+
+    def release_funds(self):
+        bb.minerals_pending -= self.unit_type.mineralPrice()
+        bb.gas_pending -= self.unit_type.gasPrice()
+
+    def on_frame(self):
+        if self.worker.dead and self.unit_type != UnitType.Zerg_Extractor:
+            logging.error("This means he was killed in action!!!!! we need to do something about this")
+            # in any case this guy is done
+            self.job_over(None)
+            return
+        #explored = bb.game.isExplored(position.getX(), position.getY())
+        self.worker.build(self.unit_type, self.position)
+
+    def on_unit_destroy(self, unit):
+        self.log("Died while building {0} at {1}".format(self.unit_type, self.position))
+        if self.unit_type != UnitType.Zerg_Extractor:
+            self.job_over()
+
+    def on_unit_morph(self, unit):
+        self.log("Morphed into {0}".format(self.unit_type))
+        self.job_over(unit)
+
+    def job_over(self, new_building):
+        self.release_funds()
+        self.worker.clean_ownership()
+        del self.builder_expert.build_jobs[self.worker.getID()]
+        del self.bb.drones_on_way_to_build[self.worker.getID()]
+
+        for handler, event in self.events.iteritems():
+            pub.unsubscribe(handler, event)
+
+        if new_building:
+            bb.add_unit_to_free(new_building)
 
 
 class BuilderExpert:
@@ -36,47 +101,13 @@ class BuilderExpert:
         pub.subscribe(self.unit_destroyed, event_constants.onUnitDestroy)
         pub.subscribe(self.unit_morphed, event_constants.onUnitMorph)
 
-        self.workers_who_died_while_building_extractors = {}
+        self.build_jobs = {}
 
     def unit_destroyed(self, unit):
-        if unit.getID() not in self.bb.drones_on_way_to_build:
-            return
-        logging.debug("Unit destroyed while on way to build")
-
-        build_type = unit.build_job.unit_type
-
-        if build_type == UnitType.Zerg_Extractor:
-            # TODO this was expected
-            self.workers_who_died_while_building_extractors[unit.getID()] = unit
-        else:
-            # TODO this was not expected this is bad I should make the error message better and actaull do something
-            logging.error("Unit Destroyed while on way to create")
+        pass
 
     def unit_morphed(self, unit):
-        bb = self.bb
-        if unit.getID() not in self.bb.drones_on_way_to_build and unit.getType() != UnitType.Zerg_Extractor:
-            return
-
-        builder = unit
-        if unit.getType() == UnitType.Zerg_Extractor:
-            builder = None
-            logging.debug("Extractor Morphed")
-            for worker in self.workers_who_died_while_building_extractors.values():
-                if worker.build_job.position == unit.getTilePosition():
-                    del self.workers_who_died_while_building_extractors[worker.getID()]
-                    builder = worker
-                    break
-            if not builder:
-                logging.error("An extractor morphed without us having known that a worker had died to build it")
-
-        job = builder.build_job
-        bb.minerals_pending -= job.unit_type.mineralPrice()
-        bb.gas_pending -= job.unit_type.gasPrice()
-
-        # NOTE later I might choose to keep this unit
-        job.worker.clean_ownership()
-        del bb.drones_on_way_to_build[job.worker.getID()]
-        bb.add_unit_to_free(unit)
+        pass
 
     # Assumes this job is valid
     def create_build_job(self, worker, unit_type, position):
@@ -86,13 +117,12 @@ class BuilderExpert:
 
         worker.build_job = BuildJob(worker, unit_type, position)
         self.bb.drones_on_way_to_build[worker.getID()] = worker
+
+        #explored = bb.game.isExplored(position.getX(), position.getY())
         worker.build(unit_type, position)
 
     def on_frame(self):
         bb = self.bb
-
-        if len(self.workers_who_died_while_building_extractors):
-            logging.error("This means he was killed in action!!!!! we need to do something about this")
 
 
         free_hatcheries = bb.get_friendly_x(UnitType.Zerg_Hatchery)
@@ -131,20 +161,18 @@ class BuilderExpert:
             worker.owner = self
             worker.claimed = True
 
-            regions = bb.BWTA.getBaseLocations()
-            start_location = bb.BWTA.getStartLocation(bb.player)
-            start_tile_position = start_location.getTilePosition()
-
             build_near = worker.getTilePosition()
             if next_unit_type == UnitType.Zerg_Hatchery:
-                position = self.get_build_tile(worker, next_unit_type, build_near)
-                #start_location = bb.BWTA.getStartLocation(bb.player)
-                #region = start_location.get
+                expansion_location = bb.next_expansion_location()
+                bb.claim_build_location(expansion_location)
+                position = expansion_location.getTilePosition()
+                build_on_top_of_unit = None
             else:
-                position = self.get_build_tile(worker, next_unit_type, build_near)
+                position, build_on_top_of_unit = self.get_build_tile(worker, next_unit_type, build_near)
             if not position:
                 logging.error("Unable to find a location to build")
-            self.create_build_job(worker, next_unit_type, position)
+            #self.build_jobs[worker.getID()] = self.create_build_job(worker, next_unit_type, position)
+            self.build_jobs[worker.getID()] = BuildJob(worker, next_unit_type, position, build_on_top_of_unit, self)
 
             bb.build_schedule.pop(0)
 
@@ -158,7 +186,7 @@ class BuilderExpert:
                 return None
             # TODO I'm not a fan of this doing that here
             bb.remove_unit_from_free(extractors[0])
-            return extractors[0].getTilePosition()
+            return extractors[0].getTilePosition(), extractors[0]
 
         distance = 3
         while distance < max_distance:
@@ -186,10 +214,9 @@ class BuilderExpert:
                             continue
 
                         if not units_in_way:
-                            return TilePosition(i, j)
+                            return TilePosition(i, j), None
 
             distance += 2
-
 
 
 

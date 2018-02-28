@@ -35,6 +35,7 @@ class Bot(DefaultBWListener):
         self.experts = []
         self.bb = BlackBoard()
 
+
     def run(self):
         self.mirror.getModule().setEventListener(self)
         self.mirror.startGame()
@@ -88,7 +89,6 @@ class Bot(DefaultBWListener):
         
         self.game = self.mirror.getGame()
         self.player = self.game.self()
-
         self.game.enableFlag(1)
         self.game.setLocalSpeed(42)
 

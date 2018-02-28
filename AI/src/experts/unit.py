@@ -42,7 +42,8 @@ class UnitExpert:
         #bb.add_unit_to_free(unit)
         print "Create: {0}: {1}".format(unit.getType(), unit.name)
 
-        pub.sendMessage(event_constants.onUnitCreate, unit=unit)
+        #pub.sendMessage(event_constants.event_x_for_u(event_constants.onUnitCreate, unit), unit=unit)
+        event_constants.send_event_x_for_u(event_constants.onUnitCreate, unit)
 
     def onUnitDiscover(self, unit):
         if unit.getType() == UnitType.Unknown:
@@ -53,7 +54,8 @@ class UnitExpert:
         print "Discover: {0}: {1}".format(unit.getType(), unit.name)
         # TODO could a unit be discovered that someone already owns??? I guess if the become inaccesible
         bb.add_unit_to_free(unit)
-        pub.sendMessage(event_constants.onUnitDiscover, unit=unit)
+        #pub.sendMessage(event_constants.onUnitDiscover, unit=unit)
+        event_constants.send_event_x_for_u(event_constants.onUnitDiscover, unit)
 
     def onUnitMorph(self, unit):
         if unit.getType() == UnitType.Unknown:
@@ -77,7 +79,8 @@ class UnitExpert:
             bb.add_unit_to_free(unit)
 
         print "Morph: {0}: {1}".format(unit.getType(), unit.name)
-        pub.sendMessage(event_constants.onUnitMorph, unit=unit)
+        #pub.sendMessage(event_constants.onUnitMorph, unit=unit)
+        event_constants.send_event_x_for_u(event_constants.onUnitMorph, unit)
 
     def onUnitComplete(self, unit):
         if unit.getType() == UnitType.Unknown:
@@ -91,15 +94,16 @@ class UnitExpert:
             self.bb.add_unit_to_free(unit)
 
         print "Complete: {0}: {1}".format(unit.getType(), unit.name)
-        pub.sendMessage(event_constants.onUnitComplete, unit=unit)
-
+        #pub.sendMessage(event_constants.onUnitComplete, unit=unit)
+        event_constants.send_event_x_for_u(event_constants.onUnitComplete, unit)
 
     def onUnitEvade(self, unit):
         if unit.getType() == UnitType.Unknown:
             return
         unit = self.find_or_wrap_unit(unit)
         print "Evade: {0}: {1}".format(unit.getType(), unit.name)
-        pub.sendMessage(event_constants.onUnitEvade, unit=unit)
+        #pub.sendMessage(event_constants.onUnitEvade, unit=unit)
+        event_constants.send_event_x_for_u(event_constants.onUnitEvade, unit)
 
     def onUnitDestroy(self, unit):
         bb = BlackBoard()
@@ -114,4 +118,5 @@ class UnitExpert:
         #    unit.destroy_callback(unit)
 
         print "Destroy: {0}: {1}".format(unit.getType(), unit.name)
-        pub.sendMessage(event_constants.onUnitDestroy, unit=unit)
+        #pub.sendMessage(event_constants.onUnitDestroy, unit=unit)
+        event_constants.send_event_x_for_u(event_constants.onUnitDestroy, unit)
