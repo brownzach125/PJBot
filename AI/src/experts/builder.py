@@ -171,7 +171,6 @@ class BuilderExpert:
                 position, build_on_top_of_unit = self.get_build_tile(worker, next_unit_type, build_near)
             if not position:
                 logging.error("Unable to find a location to build")
-            #self.build_jobs[worker.getID()] = self.create_build_job(worker, next_unit_type, position)
             self.build_jobs[worker.getID()] = BuildJob(worker, next_unit_type, position, build_on_top_of_unit, self)
 
             bb.build_schedule.pop(0)
@@ -183,7 +182,7 @@ class BuilderExpert:
             extractors = filter(lambda x: x.exists(), extractors)
             if not len(extractors):
                 logging.debug("There are no available extractors")
-                return None
+                return None, None
             # TODO I'm not a fan of this doing that here
             bb.remove_unit_from_free(extractors[0])
             return extractors[0].getTilePosition(), extractors[0]
@@ -217,6 +216,7 @@ class BuilderExpert:
                             return TilePosition(i, j), None
 
             distance += 2
+        return None, None
 
 
 

@@ -9,7 +9,7 @@ bb = BlackBoard()
 
 @every(event_constants.onStart)
 def on_start():
-    bb.max_expert = RegionGraph('Map Expert')
+    bb.map_expert = RegionGraph('Map Expert')
 
 
 class Region(Wrapped):
@@ -57,6 +57,9 @@ class RegionGraph(Expert):
 
         expansions = []
         self.depth_traversal(expansions, lambda expansions, region, depth: expansions)
+
+        self.bb.regions = self.regions
+        self.bb.base_locations = self.base_locations
 
         def find_all_bases(base_locations, region, depth):
             for base_location in region.getBaseLocations():

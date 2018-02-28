@@ -64,7 +64,9 @@ class BlackBoard:
     # Scheduler Expert
     build_schedule = []
 
-    # Map manager
+    # Map Expert
+    regions = None
+    base_locations = None
     next_expansion_location = None
     claim_build_location = None
     release_build_location = None

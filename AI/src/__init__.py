@@ -4,3 +4,4 @@ from AI.src.experts import builder
 from AI.src.experts import human_input
 from AI.src.experts import scheduler
 from AI.src.experts import map
+from AI.src.experts import overlays
